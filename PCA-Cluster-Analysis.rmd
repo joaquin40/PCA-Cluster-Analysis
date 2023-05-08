@@ -78,16 +78,15 @@ dev.copy(png, "./images/scree_plot.png")
 dev.off()
 
 ```
-"Avg_Credit_Limit"   
-[4] "Total_Credit_Cards"  "Total_visits_bank"   "Total_visits_online"
-[7] "Total_calls_made"  
 
-Based on the plot below, show the first component has more weight in `Total_calls_made`, `Avg_Credit_Limit`, and `Total_Credit_Cards` and less on `Total_visits_online`. While the second component has more weight on `Total_visits_online`. The plot also show that the `Total_visits_online` and `Avg_Credit_Limit` are correlated with each other. Meaning, customer with high credit limit tend to have a higher visit online website more. 
+Based on the plot below, show the first component has more weight in `Total_calls_made`, `Avg_Credit_Limit`, and `Total_Credit_Cards` and less on `Total_visits_online`. While the second component has more weight on `Total_visits_online`. The plot also show that the `Total_visits_online` and `Avg_Credit_Limit` are correlated with each other. Meaning, customer with high credit limit tend to have a higher total visit online. 
 
 
 ```{r}
 #names(df)
-biplot(pr_out, scale = T, cex = .8, main = "")
+biplot(pr_out, scale = T, cex = .8, main = "", xlim=c(-.15,.15), ylim=c(-.10,.15))
+dev.copy(png, "./images/pca_plot.png")
+dev.off()
 ```
 
 ## K-means
@@ -115,8 +114,10 @@ ggplot(data.frame(k = 1:k, wcss= wcss), aes(x = k , y = wcss)) +
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = 1:k)+
-  labs(x = "number of Cluster (k)", y = "Within-cluster sum of squares", title = "Elbow plot K-means") 
+  labs(x = "Number of Cluster (k)", y = "Within-cluster sum of squares", title = "") 
 
+dev.copy(png, "./images/elbow.png")
+dev.off()
 ```
 
 
@@ -144,9 +145,12 @@ plot(df1, col = km_out$cluster + 1, pch = 19, cex =.6 ,
 K-means k=3 cluster plot using PC1 vs PC2
 ```{r}
 ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_out$cluster) )) + 
-  geom_point(size = 1.2,show.legend = F) + 
+  geom_point(size = 1.5,show.legend = F) + 
   labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
   theme_classic()
+
+dev.copy(png, "./images/kmeans_pca.png")
+dev.off()
 
 plot(pr_out$x[,1],  pr_out$x[,2], pch = 19, cex = .8,
      xlab = "PC1", ylab = "PC2",
@@ -163,9 +167,15 @@ hc_complete <- hclust(dist(scale(df1)), method = "complete" )
 avg <- hclust(dist(scale(df1)), method = "average" )
 ```
 
-```{r}
+```{r, fig.width=8}
 plot(hc_complete, main = "Complete Linkage", sub = "", xlab = "")
+dev.copy(png, "./images/complete_link.png", width = 2500, 1000)
+dev.off()
+
 plot(hc_complete, main = "Average Linkage", sub = "", xlab = "")
+dev.copy(png, "./images/avg_link.png", width = 2500, 1000)
+dev.off()
+
 ```
 
 Get the observations for 3 clusters
@@ -206,8 +216,11 @@ km_cluster
 Plot the cluster output from K-means on the first two components
 ```{r}
 ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_cluster$cluster) )) + 
-  geom_point(size = 1.2,show.legend = F) + 
+  geom_point(size = 1.5,show.legend = F) + 
   labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
   theme_classic()
+
+dev.copy(png, "./images/pca_kmeans.png")
+dev.off()
 ```
 

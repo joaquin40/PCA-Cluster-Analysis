@@ -1,7 +1,11 @@
+## ---------------------------------------------------------------------
+knitr::purl("PCA-Cluster-Analysis.rmd")
+
+
 ## ----setup, include=FALSE---------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
- 
+
 ## ---------------------------------------------------------------------
 pacman::p_load(data.table, skimr, tidyverse, cluster)
 
@@ -16,7 +20,8 @@ DataExplorer::plot_missing(df)
 
 ## ---------------------------------------------------------------------
 names(df)
-df %>% skim()
+a <- df %>% skim()
+a[,c(2,5,6)]
 
 
 ## ---------------------------------------------------------------------
@@ -45,12 +50,17 @@ plot(pve, type = "b", ylim = c(0,1),
 
 plot(cumsum(pve), type = "b", ylim = c(0,1),
      xlab = "Principle component",
-     ylab = "Proportional Variance Explained")
+     ylab = "Cumulative Proportional Variance Explained")
+dev.copy(png, "./images/scree_plot.png")
+dev.off()
+
 
 
 ## ---------------------------------------------------------------------
 #names(df)
-biplot(pr_out, scale = T, cex = .8, main = "")
+biplot(pr_out, scale = T, cex = .8, main = "", xlim=c(-.15,.15), ylim=c(-.10,.15))
+dev.copy(png, "./images/pca_plot.png")
+dev.off()
 
 
 ## ---------------------------------------------------------------------
@@ -66,8 +76,10 @@ ggplot(data.frame(k = 1:k, wcss= wcss), aes(x = k , y = wcss)) +
   geom_point() + 
   geom_line() + 
   scale_x_continuous(breaks = 1:k)+
-  labs(x = "number of Cluster (k)", y = "Within-cluster sum of squares", title = "Elbow plot K-means") 
+  labs(x = "Number of Cluster (k)", y = "Within-cluster sum of squares", title = "") 
 
+dev.copy(png, "./images/elbow.png")
+dev.off()
 
 
 ## ---------------------------------------------------------------------
@@ -87,9 +99,12 @@ plot(df1, col = km_out$cluster + 1, pch = 19, cex =.6 ,
 
 ## ---------------------------------------------------------------------
 ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_out$cluster) )) + 
-  geom_point(size = 1.2,show.legend = F) + 
+  geom_point(size = 1.5,show.legend = F) + 
   labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
   theme_classic()
+
+dev.copy(png, "./images/kmeans_pca.png")
+dev.off()
 
 plot(pr_out$x[,1],  pr_out$x[,2], pch = 19, cex = .8,
      xlab = "PC1", ylab = "PC2",
@@ -102,9 +117,15 @@ hc_complete <- hclust(dist(scale(df1)), method = "complete" )
 avg <- hclust(dist(scale(df1)), method = "average" )
 
 
-## ---------------------------------------------------------------------
+## ---- fig.width=8-----------------------------------------------------
 plot(hc_complete, main = "Complete Linkage", sub = "", xlab = "")
+dev.copy(png, "./images/complete_link.png", width = 2500, 1000)
+dev.off()
+
 plot(hc_complete, main = "Average Linkage", sub = "", xlab = "")
+dev.copy(png, "./images/avg_link.png", width = 2500, 1000)
+dev.off()
+
 
 
 ## ---------------------------------------------------------------------
@@ -135,7 +156,10 @@ km_cluster
 
 ## ---------------------------------------------------------------------
 ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_cluster$cluster) )) + 
-  geom_point(size = 1.2,show.legend = F) + 
+  geom_point(size = 1.5,show.legend = F) + 
   labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
   theme_classic()
+
+dev.copy(png, "./images/pca_kmeans.png")
+dev.off()
 
