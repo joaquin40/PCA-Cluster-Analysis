@@ -1,0 +1,209 @@
+---
+title: "PCA-Cluster-Analysis"
+author: "Joaquin Sanchez Ibarra"
+date: "2023-05-06"
+output: html_document
+---
+
+```{r}
+knitr::purl("PCA-Cluster-Analysis.rmd")
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Load Packages
+```{r}
+pacman::p_load(data.table, skimr, tidyverse, cluster)
+```
+
+Read credit card customer data 
+```{r}
+df <- fread("./data/Credit Card Customer Data.csv")
+```
+
+Check for missing data 
+```{r}
+DataExplorer::plot_missing(df)
+```
+
+Check the description statistics of data
+```{r}
+names(df)
+df %>% skim()
+```
+
+
+## PCA 
+
+There is clearly a difference between the average mean and variance between the variables. Thus, the data was scaled to perform principal component analysis (PCA).
+
+```{r}
+df1 <- df[,-c(1,2)]
+apply(df1, 2, mean) # mean
+apply(df1, 2, var)  # variance
+```
+
+Performed PCA, variables scaled
+```{r}
+pr_out <- prcomp(df1, scale = TRUE)
+```
+
+The first two PC explain about 83.17% of the variability of the entire data set
+```{r}
+summary(pr_out)
+```
+
+Partial proportional variance explained plot
+
+```{r}
+pve <- summary(pr_out)$importance[2,]
+```
+
+Will used to the first two principle components based on the plots below
+```{r}
+par(mfrow = c(1,2))
+plot(pve, type = "b", ylim = c(0,1),
+     xlab = "Principle component",
+     ylab = "Proportional Variance Explained")
+
+plot(cumsum(pve), type = "b", ylim = c(0,1),
+     xlab = "Principle component",
+     ylab = "Proportional Variance Explained")
+```
+"Avg_Credit_Limit"   
+[4] "Total_Credit_Cards"  "Total_visits_bank"   "Total_visits_online"
+[7] "Total_calls_made"  
+
+Based on the plot below, show the first component has more weight in `Total_calls_made`, `Avg_Credit_Limit`, and `Total_Credit_Cards` and less on `Total_visits_online`. While the second component has more weight on `Total_visits_online`. The plot also show that the `Total_visits_online` and `Avg_Credit_Limit` are correlated with each other. Meaning, customer with high credit limit tend to have a higher visit online website more. 
+
+
+```{r}
+#names(df)
+biplot(pr_out, scale = T, cex = .8, main = "")
+```
+
+## K-means
+
+nstart: The number of times the k-means algorithm will be run with different initial values for the cluster centers (random intial cluster).
+
+The default value is 1, meaning that the algorithm will be run only once. Increasing the value of nstart can help to find a better solution when the algorithm gets stuck in a local minimum. 
+
+
+"Elbow method" to determine number of clusters to used
+
+Plot within cluster sum of squares against k (number of cluster).
+
+We choose to select k = 3 since, the slope become more linear as k > 3 
+```{r}
+wcss <- c()
+k <-  10
+
+for(i in 1:k){
+  km = kmeans(scale(df1), i, nstart = 500, iter.max = 500)
+  wcss[i] =km$tot.withinss
+}
+
+ggplot(data.frame(k = 1:k, wcss= wcss), aes(x = k , y = wcss)) + 
+  geom_point() + 
+  geom_line() + 
+  scale_x_continuous(breaks = 1:k)+
+  labs(x = "number of Cluster (k)", y = "Within-cluster sum of squares", title = "Elbow plot K-means") 
+
+```
+
+
+## K-means with k = 3 (3 clusters)
+
+Performed K-means
+```{r}
+set.seed(1)
+km_out <- kmeans(scale(df1), 3, nstart = 100, iter.max = 200)
+```
+
+About 71% of variation is explain by the clusters
+```{r}
+km.out
+#km.out$tot.withinss
+```
+
+
+```{r}
+plot(df1, col = km_out$cluster + 1, pch = 19, cex =.6 ,
+     main = paste("K-means Clustering Results with k = ", max(km_out$cluster)) )
+```
+
+
+K-means k=3 cluster plot using PC1 vs PC2
+```{r}
+ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_out$cluster) )) + 
+  geom_point(size = 1.2,show.legend = F) + 
+  labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
+  theme_classic()
+
+plot(pr_out$x[,1],  pr_out$x[,2], pch = 19, cex = .8,
+     xlab = "PC1", ylab = "PC2",
+     col = (km_out$cluster + 1), main = paste("K-means Clustering Results with k = ", max(km_out$cluster)))
+```
+
+## Hierarchical cluster
+
+Used hierarchical cluster using Average and Complete linkage. Results are very similar between the two 
+
+```{r}
+set.seed(1)
+hc_complete <- hclust(dist(scale(df1)), method = "complete" )
+avg <- hclust(dist(scale(df1)), method = "average" )
+```
+
+```{r}
+plot(hc_complete, main = "Complete Linkage", sub = "", xlab = "")
+plot(hc_complete, main = "Average Linkage", sub = "", xlab = "")
+```
+
+Get the observations for 3 clusters
+```{r}
+hm_cluster <- cutree(hc_complete, 3)
+```
+
+
+The results of K-means and Hierarchical cluster for 3 clusters are really different 
+```{r}
+table(hm_cluster, km_cluster_complete = km_out$cluster)
+```
+
+## Performed Hierarchical cluster of PCA first two components
+
+```{r}
+set.seed(1)
+hc_pca <- hclust(dist(pr_out$x[,1:2]))
+```
+
+```{r}
+plot(hc_pca, sub = "", xlab = "", main = "Hierarchical cluster on first 2 PCA")
+```
+
+## k-cluster on first two components
+
+```{r}
+set.seed(1)
+km_cluster <- kmeans(pr_out$x[,1:2], 3, nstart = 100,iter.max = 200)
+```
+
+About 86% of variation is explain by the clusters
+
+```{r}
+km_cluster
+```
+
+Plot the cluster output from K-means on the first two components
+```{r}
+ggplot(data.frame(pc1 = pr_out$x[,1],  pc2 = pr_out$x[,2]), aes(x = pc1, y = pc2, color = as.factor(km_cluster$cluster) )) + 
+  geom_point(size = 1.2,show.legend = F) + 
+  labs(x = "PC1", y = "PC2",title = paste("K-means Clustering Results with k = ", max(km_out$cluster))) + 
+  theme_classic()
+```
+
