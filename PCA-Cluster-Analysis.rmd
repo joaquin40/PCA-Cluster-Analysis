@@ -33,7 +33,8 @@ DataExplorer::plot_missing(df)
 Check the description statistics of data
 ```{r}
 names(df)
-df %>% skim()
+a <- df %>% skim()
+a[,c(2,5,6)]
 ```
 
 
@@ -72,7 +73,10 @@ plot(pve, type = "b", ylim = c(0,1),
 
 plot(cumsum(pve), type = "b", ylim = c(0,1),
      xlab = "Principle component",
-     ylab = "Proportional Variance Explained")
+     ylab = "Cumulative Proportional Variance Explained")
+dev.copy(png, "./images/scree_plot.png")
+dev.off()
+
 ```
 "Avg_Credit_Limit"   
 [4] "Total_Credit_Cards"  "Total_visits_bank"   "Total_visits_online"
